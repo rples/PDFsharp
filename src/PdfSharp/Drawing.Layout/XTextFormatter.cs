@@ -165,6 +165,78 @@ namespace PdfSharp.Drawing.Layout
             }
         }
 
+        /// <summary>
+        /// Get text height
+        /// </summary>
+        /// <param name="gfx"></param>
+        /// <param name="text"></param>
+        /// <param name="font"></param>
+        /// <param name="width"></param>
+        /// <param name="maxHeight">The maximum height of layout rectangle with text.</param>
+        /// <returns></returns>
+        public double GetTextRectangleHeight(XGraphics gfx, string text, XFont font, double width, double maxHeight)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return 0;
+            }
+
+            Text = text;
+            Font = font;
+            LayoutRectangle = new XRect(0,0,width,maxHeight);
+
+            CreateBlocks();
+            CreateLayout();
+
+            var dx = LayoutRectangle.Location.X;
+            var dy = LayoutRectangle.Location.Y + _cyAscent;
+            var count = _blocks.Count;
+            var maxdx = dx;
+            var maxdy = dy;
+
+            for (var idx = 0; idx < count; idx++)
+            {
+                var block = _blocks[idx];
+
+                if (block.Stop)
+                {
+                    break;
+                }
+
+                if (block.Type == BlockType.LineBreak)
+                {
+                    continue;
+                }
+
+                var xpom = gfx.MeasureString(block.Text, font);
+
+                if (xpom.Width + block.Location.X + dx > maxdx)
+                {
+                    maxdx = xpom.Width + block.Location.X + dx;
+                }
+
+                if (xpom.Height + block.Location.Y + dy > maxdy)
+                {
+                    maxdy = xpom.Height + block.Location.Y + dy;
+                }
+            }
+
+            return maxdy - dy;
+        }
+
+        /// <summary>
+        /// Get text height
+        /// </summary>
+        /// <param name="gfx"></param>
+        /// <param name="text"></param>
+        /// <param name="font"></param>
+        /// <param name="width"></param>
+        /// <returns></returns>
+        public double GetTextRectangleHeight(XGraphics gfx, string text, XFont font, double width)
+        {
+            return GetTextRectangleHeight(gfx, text, font, width, double.MaxValue);
+        }
+
         void CreateBlocks()
         {
             _blocks.Clear();
